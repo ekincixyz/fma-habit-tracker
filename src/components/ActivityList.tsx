@@ -27,7 +27,7 @@ export default function ActivityList({ activities }: ActivityListProps) {
 
   return (
     <div>
-      {hasImages && (
+      {hasImages && viewMode === 'list' && (
         <div className="flex justify-end mb-4">
           <div className="bg-[#0D1116] p-1 rounded-lg flex">
             <button
@@ -62,7 +62,7 @@ export default function ActivityList({ activities }: ActivityListProps) {
       )}
       
       {viewMode === 'list' ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {activities.length === 0 ? (
             <div className="bg-[#0D1116] rounded-lg p-6 text-center text-gray-400">
               No entries yet. Click the + button to add your first entry.
@@ -71,25 +71,15 @@ export default function ActivityList({ activities }: ActivityListProps) {
             activities.map((activity) => (
               <div
                 key={activity.id}
-                className="bg-[#0D1116] rounded-lg p-4 border border-[#30363d] hover:border-[#8b949e] transition-colors"
+                className="bg-[#161B22] rounded-lg p-4 flex items-center"
               >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-2 h-2 rounded-full bg-[#018A08]" />
-                  <span className="text-gray-400">
+                <div className="w-3 h-3 rounded-full bg-[#018A08] mr-3" />
+                <div className="flex-1">
+                  <div className="text-white font-medium">{activity.text || "Workout"}</div>
+                  <div className="text-gray-400 text-sm">
                     {formatDate(activity.date)}
-                  </span>
-                </div>
-                <p className="text-white mb-4">{activity.text}</p>
-                {activity.imageUrl && (
-                  <div className="relative w-full aspect-video rounded-lg overflow-hidden">
-                    <Image
-                      src={activity.imageUrl}
-                      alt=""
-                      fill
-                      className="object-cover"
-                    />
                   </div>
-                )}
+                </div>
               </div>
             ))
           )}

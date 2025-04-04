@@ -10,7 +10,6 @@ interface ContributionGridProps {
 export default function ContributionGrid({ activities }: ContributionGridProps) {
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<Date>(new Date());
-  const [monthLabels, setMonthLabels] = useState<{text: string, column: number, row: number}[]>([]);
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Initialize the start date on first load (from localStorage or use today)
@@ -63,76 +62,6 @@ export default function ContributionGrid({ activities }: ContributionGridProps) 
     
     return grid;
   }, []);
-
-  // Calculate month labels positions after the grid is rendered
-  useEffect(() => {
-    if (days.length === 0 || !gridRef.current) return;
-    
-    const labels: {text: string, column: number, row: number}[] = [];
-    
-    // For the first row, check if we need a month label
-    const firstRowMonths = new Map<string, {column: number, row: number}>();
-    
-    // Check all days in the first row
-    for (let colIndex = 0; colIndex < days.length && colIndex < 7; colIndex++) {
-      const date = days[colIndex][0]; // First row
-      const monthName = date.toLocaleString('default', { month: 'short' });
-      
-      // Store the month info for the first row, keeping track of the latest one
-      firstRowMonths.set(monthName, {
-        column: colIndex,
-        row: 0
-      });
-    }
-    
-    // If there are months in the first row, add only the latest one
-    if (firstRowMonths.size > 0) {
-      // Get all month names in the first row
-      const firstRowMonthNames = Array.from(firstRowMonths.keys());
-      
-      // Sort months by their positions (columns)
-      firstRowMonthNames.sort((a, b) => {
-        const posA = firstRowMonths.get(a)!.column;
-        const posB = firstRowMonths.get(b)!.column;
-        return posA - posB;
-      });
-      
-      // Get the latest month in the first row
-      const latestMonth = firstRowMonthNames[firstRowMonthNames.length - 1];
-      const latestMonthPos = firstRowMonths.get(latestMonth)!;
-      
-      // Add only the latest month label from the first row
-      labels.push({
-        text: latestMonth,
-        column: latestMonthPos.column,
-        row: latestMonthPos.row
-      });
-    }
-    
-    // Now add labels for the first day of each month in subsequent rows
-    for (let colIndex = 0; colIndex < days.length; colIndex++) {
-      const week = days[colIndex];
-      
-      for (let rowIndex = 0; rowIndex < week.length; rowIndex++) {
-        // Skip the first row as we've already processed it
-        if (colIndex < 7 && rowIndex === 0) continue;
-        
-        const date = week[rowIndex];
-        const isFirstOfMonth = date.getDate() === 1;
-        
-        if (isFirstOfMonth) {
-          const monthName = date.toLocaleString('default', { month: 'short' });
-          labels.push({
-            text: monthName,
-            column: colIndex,
-            row: rowIndex
-          });
-        }
-      }
-    }
-    
-    setMonthLabels(labels);
-  }, [days]);
 
   // Day name constants for Monday-Sunday (only display some)
   const fullDayLabels = [
@@ -200,13 +129,11 @@ export default function ContributionGrid({ activities }: ContributionGridProps) 
                         hasActivity
                           ? 'bg-[#018A08] hover:bg-[#04a60c]'
                           : isToday
-                          ? 'bg-[#1f6feb] hover:bg-[#388bfd]'
+                          ? 'bg-[#161B22] hover:bg-[#1f2631]'
                           : isFirstDayOfMonth
                           ? 'bg-[#222933] hover:bg-[#2a3441]' // Slightly highlight first day of month
                           : 'bg-[#161B22] hover:bg-[#1f2631]'
-                      } relative cursor-pointer ${
-                        isToday ? 'ring-1 ring-white' : ''
-                      }`}
+                      } relative cursor-pointer`}
                       title={`${dayName}, ${formatDate(date)}`}
                       onMouseEnter={() => setHoveredDay(dateStr)}
                       onMouseLeave={() => setHoveredDay(null)}
@@ -229,20 +156,6 @@ export default function ContributionGrid({ activities }: ContributionGridProps) 
               </div>
             ))}
           </div>
-          
-          {/* Month labels */}
-          {monthLabels.map((label, idx) => (
-            <div
-              key={idx}
-              className="absolute text-xs text-gray-400"
-              style={{
-                left: `${label.column * 19 + 5}px`, // Adjusted for the 3px horizontal spacing
-                top: `-18px` // Position above the grid
-              }}
-            >
-              {label.text}
-            </div>
-          ))}
         </div>
       </div>
     </div>

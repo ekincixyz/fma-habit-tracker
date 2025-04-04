@@ -8,6 +8,7 @@ import ContributionGrid from '@/components/ContributionGrid';
 import AddEntryButton from '@/components/AddEntryButton';
 import EntryModal from '@/components/EntryModal';
 import ActivityList from '@/components/ActivityList';
+import BottomMenuBar from '@/components/BottomMenuBar';
 
 interface Activity {
   id: string;
@@ -21,6 +22,7 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('home');
 
   // Load activities from localStorage on initial load
   useEffect(() => {
@@ -72,7 +74,7 @@ export default function Home() {
     }
   };
 
-  // Calculate streak - consecutive days with entries
+  // Calculate streak - consecutive weeks with entries
   const calculateStreak = () => {
     if (activities.length === 0) return 0;
     
@@ -81,19 +83,37 @@ export default function Home() {
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
     
-    let streak = 1;
-    let currentDate = new Date(sortedActivities[0].date);
+    // Group activities by week
+    const weekMap = new Map<string, boolean>();
     
-    for (let i = 1; i < sortedActivities.length; i++) {
-      const prevDate = new Date(sortedActivities[i].date);
-      const diffDays = Math.floor(
-        (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24)
+    sortedActivities.forEach(activity => {
+      const date = new Date(activity.date);
+      // Get the week number (Sunday-based)
+      const weekStart = new Date(date);
+      weekStart.setDate(date.getDate() - date.getDay()); // Set to Sunday
+      weekStart.setHours(0, 0, 0, 0);
+      const weekKey = weekStart.toISOString().split('T')[0];
+      weekMap.set(weekKey, true);
+    });
+
+    // Convert weeks to array and sort
+    const weeks = Array.from(weekMap.keys()).sort().reverse();
+    
+    if (weeks.length === 0) return 0;
+    
+    let streak = 1;
+    let currentWeek = new Date(weeks[0]);
+    
+    for (let i = 1; i < weeks.length; i++) {
+      const prevWeek = new Date(weeks[i]);
+      const diffWeeks = Math.round(
+        (currentWeek.getTime() - prevWeek.getTime()) / (1000 * 60 * 60 * 24 * 7)
       );
       
-      if (diffDays === 1) {
+      if (diffWeeks === 1) {
         streak++;
-        currentDate = prevDate;
-      } else if (diffDays > 1) {
+        currentWeek = prevWeek;
+      } else if (diffWeeks > 1) {
         break;
       }
     }
@@ -104,19 +124,28 @@ export default function Home() {
   const streak = calculateStreak();
 
   return (
-    <main className="min-h-screen bg-[#050709] px-4 py-6 max-w-2xl mx-auto">
+    <main className="min-h-screen bg-[#050709] px-4 py-6 pb-24 max-w-2xl mx-auto">
       <Header />
-      <StreakBadge streak={streak} />
-      <ContributionGrid
-        activities={activities.map(a => ({
-          date: a.date,
-          completed: true,
-        }))}
-      />
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold text-white mb-4">Activities</h2>
-        <ActivityList activities={activities} />
-      </div>
+      
+      {activeTab === 'home' && (
+        <div className="mb-16">
+          <StreakBadge streak={streak} />
+          <ContributionGrid
+            activities={activities.map(a => ({
+              date: a.date,
+              completed: true,
+            }))}
+          />
+        </div>
+      )}
+      
+      {activeTab === 'activities' && (
+        <div className="mt-4 mb-16">
+          <h2 className="text-2xl font-bold text-white mb-4">Activities</h2>
+          <ActivityList activities={activities} />
+        </div>
+      )}
+      
       <AddEntryButton onClick={() => setIsModalOpen(true)} />
       <EntryModal
         isOpen={isModalOpen}
@@ -124,6 +153,7 @@ export default function Home() {
         onSave={handleSaveEntry}
         isSubmitting={isSubmitting}
       />
+      <BottomMenuBar activeTab={activeTab} onTabChange={setActiveTab} />
     </main>
   );
 }
